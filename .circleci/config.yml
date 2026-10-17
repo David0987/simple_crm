@@ -81,15 +81,25 @@ jobs:
       - run:
           name: Build Docker image
           command: |
+            : "${DOCKER_USERNAME:?DOCKER_USERNAME is not set - check the docker-hub context}"
+            if [ "$DOCKER_USERNAME" != "$(echo "$DOCKER_USERNAME" | tr '[:upper:]' '[:lower:]')" ]; then
+              echo "DOCKER_USERNAME contains uppercase letters - Docker image names must be lowercase"
+              exit 1
+            fi
+            if echo "$DOCKER_USERNAME" | grep -q '[[:space:]]'; then
+              echo "DOCKER_USERNAME contains spaces or a newline - re-enter it in the docker-hub context"
+              exit 1
+            fi
             echo "Building Docker image..."
-            docker build -t $DOCKER_USERNAME/simple-crm-lite:latest .
+            docker build -t "$DOCKER_USERNAME/simple-crm-lite:latest" .
       - run:
           name: Push to Docker Hub
           command: |
+            : "${DOCKER_TOKEN:?DOCKER_TOKEN is not set - check the docker-hub context}"
             echo "Logging in to Docker Hub..."
-            echo $DOCKER_TOKEN | docker login -u $DOCKER_USERNAME --password-stdin
+            echo "$DOCKER_TOKEN" | docker login -u "$DOCKER_USERNAME" --password-stdin
             echo "Pushing image to Docker Hub..."
-            docker push $DOCKER_USERNAME/simple-crm-lite:latest
+            docker push "$DOCKER_USERNAME/simple-crm-lite:latest"
 
 workflows:
   build_test_publish:
